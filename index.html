@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JobNimbus Commission Calculator</title>
+
+<style>
+  :root {
+    --bg:#f5f7fb;
+    --card:#fff;
+    --text:#18212f;
+    --muted:#687386;
+    --line:#d9e0ea;
+    --accent:#1f4f8f;
+    --accent2:#2f6fbd;
+    --good:#136f4a;
+  }
+
+  * {
+    box-sizing:border-box;
+  }
+
+  body {
+    margin:0;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+
+  .wrap {
+    max-width:920px;
+    margin:0 auto;
+    padding:24px;
+  }
+
+  .hero {
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;
+    padding:24px;
+    border-radius:18px;
+    margin-bottom:18px;
+  }
+
+  .hero h1 {
+    margin:0 0 6px;
+    font-size:28px;
+  }
+
+  .hero p {
+    margin:0;
+    opacity:.9;
+  }
+
+  .card {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .toggle {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  button.mode {
+    padding:12px 14px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:12px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  button.mode.active {
+    background:#eaf2fd;
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  label {
+    font-size:14px;
+    font-weight:700;
+    display:block;
+    margin-bottom:6px;
+  }
+
+  input {
+    width:100%;
+    padding:13px 14px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    font-size:18px;
+    background:#fff;
+  }
+
+  .help {
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .stat {
+    background:#f8fafc;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+  }
+
+  .stat .k {
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .stat .v {
+    font-size:30px;
+    font-weight:800;
+    margin-top:5px;
+  }
+
+  .net .v {
+    color:var(--good);
+  }
+
+  .row {
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    padding:8px 0;
+    border-bottom:1px solid #edf1f5;
+  }
+
+  .row:last-child {
+    border-bottom:0;
+  }
+
+  .muted {
+    color:var(--muted);
+  }
+
+  .note {
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.45;
+  }
+
+  .section-title {
+    font-size:16px;
+    font-weight:800;
+    margin-bottom:10px;
+  }
+
+  @media (max-width:640px) {
+    .wrap {
+      padding:14px;
+    }
+
+    .grid {
+      grid-template-columns:1fr;
+    }
+
+    .hero h1 {
+      font-size:24px;
+    }
+
+    .stat .v {
+      font-size:26px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>JobNimbus Commission Calculator</h1>
+    <p>Estimate gross commission and take-home based on holds and wins.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Rep status</div>
+
+    <div class="toggle">
+      <button id="rampBtn" class="mode active" type="button">
+        Ramp Rep
+      </button>
+
+      <button id="fullBtn" class="mode" type="button">
+        Fully Ramped
+      </button>
+    </div>
+
+    <div id="modeNote" class="help">
+      Ramp target: 8 holds / 3 wins. Accelerators still start only after 15 holds / 6 wins.
+    </div>
+  </div>
+
+  <div class="card grid">
+
+    <div>
+      <label for="holds">Holds / Demos</label>
+
+      <input
+        id="holds"
+        type="number"
+        min="0"
+        step="1"
+        value="8"
+      />
+
+      <div id="holdHelp" class="help">
+        Ramp target: 8 · Full quota: 15
+      </div>
+    </div>
+
+    <div>
+      <label for="wins">Wins / Deals</label>
+
+      <input
+        id="wins"
+        type="number"
+        min="0"
+        step="1"
+        value="3"
+      />
+
+      <div id="winHelp" class="help">
+        Ramp target: 3 · Full quota: 6
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="stat">
+      <div class="k">Gross commission payout</div>
+      <div id="gross" class="v">$0.00</div>
+    </div>
+
+    <div class="stat net">
+      <div class="k">Estimated net take-home</div>
+      <div id="net" class="v">$0.00</div>
+      <div id="withheld" class="help"></div>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="section-title">Payout breakdown</div>
+
+    <div class="row">
+      <span>Hold / demo commission</span>
+      <strong id="holdPay">$0.00</strong>
+    </div>
+
+    <div class="row">
+      <span>Win / deal commission</span>
+      <strong id="winPay">$0.00</strong>
+    </div>
+
+    <div class="row">
+      <span>Federal withholding</span>
+      <span id="fed">-$0.00</span>
+    </div>
+
+    <div class="row">
+      <span>Social Security</span>
+      <span id="ss">-$0.00</span>
+    </div>
+
+    <div class="row">
+      <span>Medicare</span>
+      <span id="med">-$0.00</span>
+    </div>
+
+    <div class="row">
+      <span>Utah state</span>
+      <span id="state">-$0.00</span>
+    </div>
+
+    <div class="row">
+      <span class="muted">Estimated total withholding</span>
+      <strong id="taxRate"></strong>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="section-title">
+      Plan logic
+    </div>
+
+    <div id="logic" class="note"></div>
+
+  </div>
+
+  <div class="note">
+    Take-home is an estimate based on the withholding pattern from a prior commission check:
+    $3,083.53 gross, with $678 federal, $191 Social Security, $44 Medicare,
+    and $126 Utah state withholding.
+  </div>
+
+</div>
+
+<script>
+
+(() => {
+
+  const $ = id => document.getElementById(id);
+
+  const money = n =>
+    new Intl.NumberFormat(
+      'en-US',
+      {
+        style:'currency',
+        currency:'USD'
+      }
+    ).format(Math.max(0,n));
+
+  let mode = 'ramp';
+
+  const HOLD_BASE = 147.53;
+  const HOLD_QUOTA = 15;
+  const HOLD_ACCEL = 2.0;
+  const HOLD_RAMP = 8;
+
+  const WIN_BASE = 120;
+  const WIN_QUOTA = 6;
+  const WIN_ACCEL = 2.5;
+  const WIN_RAMP = 3;
+
+  const HOLD_RAMP_TARGET_PAY =
+    HOLD_BASE * HOLD_QUOTA;
+
+  const WIN_RAMP_TARGET_PAY =
+    WIN_BASE * WIN_QUOTA;
+
+  const FED_RATE =
+    678 / 3083.53;
+
+  const SS_RATE =
+    191 / 3083.53;
+
+  const MED_RATE =
+    44 / 3083.53;
+
+  const STATE_RATE =
+    126 / 3083.53;
+
+  const TOTAL_RATE =
+    FED_RATE +
+    SS_RATE +
+    MED_RATE +
+    STATE_RATE;
+
+
+  function num(id) {
+
+    const n =
+      Number($(id).value);
+
+    return Number.isFinite(n) && n > 0
+      ? Math.floor(n)
+      : 0;
+
+  }
+
+
+  function fullHold(h) {
+
+    if (h <= HOLD_QUOTA) {
+      return h * HOLD_BASE;
+    }
+
+    const excess =
+      h - HOLD_QUOTA;
+
+    const pctAbove =
+      excess / HOLD_QUOTA;
+
+    const acceleratedUnit =
+      HOLD_BASE *
+      (1 + HOLD_ACCEL * pctAbove);
+
+    return (
+      HOLD_QUOTA * HOLD_BASE +
+      excess * acceleratedUnit
+    );
+
+  }
+
+
+  function fullWin(w) {
+
+    if (w <= WIN_QUOTA) {
+      return w * WIN_BASE;
+    }
+
+    const excess =
+      w - WIN_QUOTA;
+
+    const pctAbove =
+      excess / WIN_QUOTA;
+
+    const acceleratedUnit =
+      WIN_BASE *
+      (1 + WIN_ACCEL * pctAbove);
+
+    return (
+      WIN_QUOTA * WIN_BASE +
+      excess * acceleratedUnit
+    );
+
+  }
+
+
+  function rampHold(h) {
+
+    if (h <= 0) {
+      return 0;
+    }
+
+    if (h <= HOLD_RAMP) {
+
+      return (
+        h / HOLD_RAMP
+      ) * HOLD_RAMP_TARGET_PAY;
+
+    }
+
+    if (h <= HOLD_QUOTA) {
+
+      return (
+        HOLD_RAMP_TARGET_PAY +
+        (h - HOLD_RAMP) * HOLD_BASE
+      );
+
+    }
+
+    const atQuota =
+      HOLD_RAMP_TARGET_PAY +
+      (HOLD_QUOTA - HOLD_RAMP) *
+      HOLD_BASE;
+
+    const excess =
+      h - HOLD_QUOTA;
+
+    const pctAbove =
+      excess / HOLD_QUOTA;
+
+    const acceleratedUnit =
+      HOLD_BASE *
+      (1 + HOLD_ACCEL * pctAbove);
+
+    return (
+      atQuota +
+      excess * acceleratedUnit
+    );
+
+  }
+
+
+  function rampWin(w) {
+
+    if (w <= 0) {
+      return 0;
+    }
+
+    if (w <= WIN_RAMP) {
+
+      return (
+        w / WIN_RAMP
+      ) * WIN_RAMP_TARGET_PAY;
+
+    }
+
+    if (w <= WIN_QUOTA) {
+
+      return (
+        WIN_RAMP_TARGET_PAY +
+        (w - WIN_RAMP) * WIN_BASE
+      );
+
+    }
+
+    const atQuota =
+      WIN_RAMP_TARGET_PAY +
+      (WIN_QUOTA - WIN_RAMP) *
+      WIN_BASE;
+
+    const excess =
+      w - WIN_QUOTA;
+
+    const pctAbove =
+      excess / WIN_QUOTA;
+
+    const acceleratedUnit =
+      WIN_BASE *
+      (1 + WIN_ACCEL * pctAbove);
+
+    return (
+      atQuota +
+      excess * acceleratedUnit
+    );
+
+  }
+
+
+  function setMode(next) {
+
+    mode = next;
+
+    $('rampBtn')
+      .classList
+      .toggle(
+        'active',
+        mode === 'ramp'
+      );
+
+    $('fullBtn')
+      .classList
+      .toggle(
+        'active',
+        mode === 'full'
+      );
+
+
+    if (mode === 'ramp') {
+
+      $('modeNote').textContent =
+        'Ramp target: 8 holds / 3 wins. Accelerators still start only after 15 holds / 6 wins.';
+
+      $('holdHelp').textContent =
+        'Ramp target: 8 · Full quota: 15';
+
+      $('winHelp').textContent =
+        'Ramp target: 3 · Full quota: 6';
+
+      $('logic').innerHTML =
+        '8 holds earns the full 15-hold target payout. ' +
+        '3 wins earns the full 6-win target payout. ' +
+        'Holds 9–15 add $147.53 each. ' +
+        'Wins 4–6 add $120 each. ' +
+        'Accelerators begin only after 15 holds or 6 wins are exceeded.';
+
+    } else {
+
+      $('modeNote').textContent =
+        'Fully ramped plan: normal per-unit payout from the first hold and win.';
+
+      $('holdHelp').textContent =
+        '$147.53 per hold · Quota: 15';
+
+      $('winHelp').textContent =
+        '$120 per win · Quota: 6';
+
+      $('logic').innerHTML =
+        '$147.53 per hold through 15 holds and $120 per win through 6 wins. ' +
+        'Demo accelerator begins at 16+ holds. ' +
+        'Deal accelerator begins at 7+ wins.';
+
+    }
+
+    update();
+
+  }
+
+
+  function update() {
+
+    const h =
+      num('holds');
+
+    const w =
+      num('wins');
+
+    const hp =
+      mode === 'ramp'
+        ? rampHold(h)
+        : fullHold(h);
+
+    const wp =
+      mode === 'ramp'
+        ? rampWin(w)
+        : fullWin(w);
+
+    const gross =
+      hp + wp;
+
+    const fed =
+      gross * FED_RATE;
+
+    const ss =
+      gross * SS_RATE;
+
+    const med =
+      gross * MED_RATE;
+
+    const state =
+      gross * STATE_RATE;
+
+    const total =
+      fed +
+      ss +
+      med +
+      state;
+
+    const net =
+      gross - total;
+
+
+    $('holdPay').textContent =
+      money(hp);
+
+    $('winPay').textContent =
+      money(wp);
+
+    $('gross').textContent =
+      money(gross);
+
+    $('net').textContent =
+      money(net);
+
+    $('withheld').textContent =
+      'Estimated withheld: ' +
+      money(total);
+
+    $('fed').textContent =
+      '-' + money(fed);
+
+    $('ss').textContent =
+      '-' + money(ss);
+
+    $('med').textContent =
+      '-' + money(med);
+
+    $('state').textContent =
+      '-' + money(state);
+
+    $('taxRate').textContent =
+      (TOTAL_RATE * 100)
+      .toFixed(2) +
+      '%';
+
+  }
+
+
+  $('rampBtn')
+    .addEventListener(
+      'click',
+      () => setMode('ramp')
+    );
+
+  $('fullBtn')
+    .addEventListener(
+      'click',
+      () => setMode('full')
+    );
+
+  $('holds')
+    .addEventListener(
+      'input',
+      update
+    );
+
+  $('wins')
+    .addEventListener(
+      'input',
+      update
+    );
+
+
+  setMode('ramp');
+
+})();
+
+</script>
+
+</body>
+</html>
